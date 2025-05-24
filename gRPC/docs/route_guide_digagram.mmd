@@ -1,0 +1,47 @@
+classDiagram
+
+    %% Service Definition
+    class RouteGuide {
+        +rpc GetFeature(Point): Feature
+        +rpc ListFeatures(Rectangle): stream Feature
+        +rpc RecordRoute(stream Point): RouteSummary
+        +rpc RouteChat(stream RouteNote): stream RouteNote
+    }
+
+    %% Message Definitions
+    class Point {
+        +int32 latitude
+        +int32 longitude
+    }
+
+    class Rectangle {
+        +Point lo
+        +Point hi
+    }
+
+    class Feature {
+        +string name
+        +Point location
+    }
+
+    class RouteNote {
+        +Point location
+        +string message
+    }
+
+    class RouteSummary {
+        +int32 point_count
+        +int32 feature_count
+        +int32 distance
+        +int32 elapsed_time
+    }
+
+    %% Relationships
+    Rectangle --> "2" Point : contains
+    Feature --> "1" Point : location
+    RouteNote --> "1" Point : location
+    RouteGuide --> Point : uses
+    RouteGuide --> Rectangle : uses
+    RouteGuide --> Feature : returns
+    RouteGuide --> RouteNote : uses
+    RouteGuide --> RouteSummary : returns

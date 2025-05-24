@@ -1,0 +1,128 @@
+classDiagram
+    class Node {
+        -name: str
+        -parent: Node
+        +get_path(): str
+        +get_client(): VehicleDataBrokerClient
+        +start()
+        +get_context(): List[str]
+        +set_context(ctx: List[str])
+    }
+
+    class DataPoint {
+        <<abstract>>
+        -name: str
+        -parent: Node
+        +join(*args): DataPoint
+        +where(condition: str): DataPoint
+        +get_query(): str
+        +subscribe(on_update): VdbSubscription
+        +get(): TypedDataPointResult
+        +set(value): void
+        -_set(value, subclass_name: str): void
+        +create_broker_data_point(value): BrokerDatapoint
+    }
+
+    class DataPointType {
+        +get(): TypedDataPointResult[T]
+        +set(value: T): void
+        +create_broker_data_point(value: T): BrokerDatapoint
+    }
+
+    class BatchSetBuilder {
+        -__client: VehicleDataBrokerClient
+        -__nodes: Dict[str, BrokerDatapoint]
+        +add(node: DataPoint, value): BatchSetBuilder
+        +apply()
+    }
+
+    class Model {
+        +set_many(): BatchSetBuilder
+        +getNode(datapoint_str: str): Node
+    }
+
+    class Service {
+        -address: str
+        -channel: grpc.aio.Channel
+        -metadata: Any
+        +__init__()
+    }
+
+    class ModelReferences {
+        <<abstract>>
+        <<deprecated>>
+        +to_string(selector): str
+    }
+
+    class Dictionary {
+        <<deprecated>>
+        -instances: List[Any]
+        +__init__(list_type: Type)
+        +to_string(selector): str
+    }
+
+    class NamedRange {
+        <<deprecated>>
+        -start: int
+        -end: int
+        -name: str
+        +__init__(name: str, start: int, end: int)
+        +to_string(selector: int): str
+    }
+
+    class ModelCollection {
+        <<deprecated>>
+        -model: Model
+        -specs: List[ModelReferences]
+        +__init__(model_refs: List[ModelReferences], model: Model)
+        +element_at(*args): TModel
+    }
+
+    class VehicleDataBrokerClient {
+        <<interface>>
+        +GetDatapoints(paths: List[str]): Dict[str, BrokerDatapoint]
+        +SetDatapoints(datapoints: Dict[str, BrokerDatapoint]): Response
+    }
+
+    class TypedDataPointResult {
+        <<generic>>
+        -path: str
+        -value: T
+        -timestamp: Any
+        +__init__(path: str, value: T, timestamp: Any)
+    }
+
+    class BrokerDatapoint {
+        <<interface>>
+        -bool_value: bool
+        -bool_array: BoolArray
+        -int32_value: int
+        -int32_array: Int32Array
+        -int64_value: int
+        -int64_array: Int64Array
+        -uint32_value: int
+        -uint32_array: Uint32Array
+        -uint64_value: int
+        -uint64_array: Uint64Array
+        -float_value: float
+        -float_array: FloatArray
+        -double_value: float
+        -double_array: DoubleArray
+        -string_value: str
+        -string_array: StringArray
+    }
+
+    DataPointType --|> DataPoint : inherits
+    Model --|> Node : inherits
+    Service --|> Node : inherits
+    Dictionary --|> ModelReferences : inherits
+    NamedRange --|> ModelReferences : inherits
+    ModelCollection --> Model : contains
+    ModelCollection --> ModelReferences : uses
+    DataPoint --> VehicleDataBrokerClient : uses
+    BatchSetBuilder --> VehicleDataBrokerClient : uses
+    Model --> VehicleDataBrokerClient : uses
+    DataPoint --> TypedDataPointResult : returns
+    DataPoint --> BrokerDatapoint : uses
+    BatchSetBuilder --> DataPoint : uses
+    Service --> grpc.aio.Channel : uses

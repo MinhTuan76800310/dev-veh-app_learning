@@ -1,0 +1,45 @@
+classDiagram
+    class Vehicle {
+        <<interface>>
+        +ADAS
+        +Powertrain
+    }
+
+    class DrivingMode {
+        -name: str
+        -settings: Dict[str, Any]
+        +__init__(name: str, settings: Dict[str, Any])
+        +apply_to_vehicle(vehicle_client: Vehicle): List[asyncio.Task]
+    }
+
+    class DrivingModeManager {
+        -vehicle: Vehicle
+        -available_modes: Dict[str, DrivingMode]
+        -current_mode: str
+        +__init__(vehicle_client: Vehicle)
+        -_initialize_default_modes()
+        +set_mode(mode_name: str): bool
+        +get_current_mode(): str
+        +get_available_modes(): List[str]
+    }
+
+    class DrivingModeApp {
+        -Vehicle: Vehicle
+        -mode_manager: DrivingModeManager
+        +__init__(vehicle_client: Vehicle)
+        +on_start()
+        +on_set_mode_request(data: str)
+        +on_get_mode_request(data: str)
+    }
+
+    class VehicleApp {
+        <<abstract>>
+        +publish_event(topic: str, data: str)
+        +run()
+    }
+
+    DrivingModeApp --|> VehicleApp : inherits
+    DrivingModeApp --> DrivingModeManager : uses
+    DrivingModeManager --> DrivingMode : contains
+    DrivingMode --> Vehicle : uses
+    DrivingModeManager --> Vehicle : uses
