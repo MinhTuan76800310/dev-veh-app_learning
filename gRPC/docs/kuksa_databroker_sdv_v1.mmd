@@ -1,0 +1,34 @@
+sequenceDiagram
+    participant Client
+    participant Server (Collector Service)
+    participant Server (Broker Service)
+
+    %% Collector Service Interactions - Defined in collector.proto %%
+    Client->>+Server (Collector Service): RegisterDatapoints(RegisterDatapointsRequest)
+    Note right of Client: Unary RPC
+    Server (Collector Service)-->>-Client: RegisterDatapointsReply
+
+    Client->>+Server (Collector Service): UpdateDatapoints(UpdateDatapointsRequest)
+    Note right of Client: Unary RPC
+    Server (Collector Service)-->>-Client: UpdateDatapointsReply
+
+    Client->>+Server (Collector Service): StreamDatapoints(stream StreamDatapointsRequest)
+    Note right of Client: Bidirectional Streaming RPC
+    Server (Collector Service)-->>-Client: stream StreamDatapointsReply
+
+    %% Broker Service Interactions - Defined in broker.proto %%
+    Client->>+Server (Broker Service): GetDatapoints(GetDatapointsRequest)
+    Note right of Client: Unary RPC
+    Server (Broker Service)-->>-Client: GetDatapointsReply
+
+    Client->>+Server (Broker Service): SetDatapoints(SetDatapointsRequest)
+    Note right of Client: Unary RPC
+    Server (Broker Service)-->>-Client: SetDatapointsReply
+
+    Client->>+Server (Broker Service): Subscribe(SubscribeRequest)
+    Note right of Client: Server Streaming RPC
+    Server (Broker Service)-->>-Client: stream SubscribeReply
+
+    Client->>+Server (Broker Service): GetMetadata(GetMetadataRequest)
+    Note right of Client: Unary RPC
+    Server (Broker Service)-->>-Client: GetMetadataReply
