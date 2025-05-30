@@ -1,0 +1,125 @@
+classDiagram
+    direction LR
+
+    class Node {
+        +name: str
+        +parent: Node
+        +get_path(): str
+        +get_client(): VehicleDataBrokerClient
+        +start()
+        +get_context(): List[str]
+        +set_context(List[str])
+    }
+
+    class DataPoint {
+        <<Abstract>>
+        +name: str
+        +parent: Node
+        +join(*args): DataPoint
+        +where(condition: str): DataPoint
+        +get_query(): str
+        +subscribe(on_update): VdbSubscription
+        +get(): BrokerDatapoint
+        +set(value)
+        +_set(value, subclass_name: str)
+        +create_broker_data_point(value): BrokerDatapoint
+    }
+    Node <|-- DataPoint
+
+    class DataPointBoolean {
+        +get(): TypedDataPointResult[bool]
+        +set(value: bool)
+        +create_broker_data_point(value: bool): BrokerDatapoint
+    }
+    DataPoint <|-- DataPointBoolean
+
+    class DataPointInt32 {
+        +get(): TypedDataPointResult[int]
+        +set(value: int)
+        +create_broker_data_point(value: int): BrokerDatapoint
+    }
+    DataPoint <|-- DataPointInt32
+    note for DataPointInt32 "Other DataPoint<Type> classes (String, Float, Arrays, etc.) follow similar pattern"
+
+    class Model {
+        +set_many(): BatchSetBuilder
+        +getNode(datapoint_str: str): Node
+    }
+    Node <|-- Model
+
+    class VehicleDataBrokerClient {
+        <<Singleton>>
+        -_instance: VehicleDataBrokerClient
+        -_channel: grpc.aio.Channel
+        -_metadata: tuple
+        -_stub: BrokerStub
+        +__new__(cls, port: Optional[int])
+        +close()
+        +GetDatapoints(datapoints: List[str]): GetDatapointsReply
+        +SetDatapoints(datapoints): SetDatapointsReply
+        +Subscribe(query: str): grpc.aio.UnaryStreamCall[SubscribeRequest, SubscribeReply]
+        +GetMetadata(names: list): GetMetadataReply
+    }
+    VehicleDataBrokerClient ..> BrokerStub : uses
+
+    class BrokerStub {
+        <<gRPC Stub>>
+        +GetDatapoints(GetDatapointsRequest): GetDatapointsReply
+        +SetDatapoints(SetDatapointsRequest): SetDatapointsReply
+        +Subscribe(SubscribeRequest): grpc.aio.UnaryStreamCall[SubscribeRequest, SubscribeReply]
+        +GetMetadata(GetMetadataRequest): GetMetadataReply
+    }
+
+    class SubscriptionManager {
+        <<Static>>
+        -_subscription_tasks: dict
+        +remove_all_subscriptions()
+        +list_all_subscription(): List[str]
+        +_remove_subscription(vdb_sub: VdbSubscription)
+        +_add_subscription(vdb_sub: VdbSubscription): asyncio.Task
+        +_subscribe_to_data_points(vdb_sub: VdbSubscription)
+        +_subscribe_to_data_points_forever(vdb_sub: VdbSubscription)
+    }
+    SubscriptionManager ..> VdbSubscription : manages
+    SubscriptionManager ..> DataPointReply : uses
+
+    class VdbSubscription {
+        +query: str
+        +vdb_client: VehicleDataBrokerClient
+        +call_back: Callable
+        +unsubscribe()
+        +subscribe()
+    }
+    VdbSubscription ..> VehicleDataBrokerClient : uses
+    VdbSubscription ..> SubscriptionManager : uses
+
+    class DataPointReply {
+        +reply: SubscribeReply
+        +get(datapoint: model.DataPoint): TypedDataPointResult
+    }
+    DataPointReply --> SubscribeReply : wraps
+    DataPointReply --> DataPoint : "uses for type info"
+    DataPointReply --> TypedDataPointResult : returns
+
+    class TypedDataPointResult~T~ {
+        +path: str
+        +value: T
+        +timestamp: Timestamp
+    }
+
+    class BatchSetBuilder {
+        -__client: VehicleDataBrokerClient
+        -__nodes: dict
+        +add(node: DataPoint, value): BatchSetBuilder
+        +apply()
+    }
+    BatchSetBuilder ..> VehicleDataBrokerClient : uses
+    BatchSetBuilder ..> DataPoint : uses
+
+    DataPoint ..> VehicleDataBrokerClient : uses 
+    DataPoint ..> VdbSubscription : creates 
+    DataPoint ..> SubscriptionManager : uses 
+    DataPoint ..> BrokerDatapoint : uses 
+    DataPointBoolean ..> TypedDataPointResult : returns 
+    Model ..> BatchSetBuilder : creates 
+
