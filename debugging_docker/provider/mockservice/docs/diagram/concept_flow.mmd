@@ -1,0 +1,13 @@
+flowchart LR
+    ConfigFile[(Config File)]
+    VehicleMock[VehicleMock]
+    DataBroker[DataBroker]
+
+    ConfigFile -->|Read config| VehicleMock
+    VehicleMock -->|Provide mocked datapoints| DataBroker
+    VehicleMock -->|Request metadata| DataBroker
+    DataBroker -->|Return metadata| VehicleMock
+    VehicleMock -->|Subscribe to datapoints| DataBroker
+    DataBroker -->|Send actuator_target| VehicleMock
+    VehicleMock -->|Execute internal behaviors| VehicleMock
+    VehicleMock -->|Send datapoint value| DataBroker

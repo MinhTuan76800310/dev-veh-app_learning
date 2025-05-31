@@ -1,0 +1,50 @@
+classDiagram
+    class BaseService {
+        Basic service responsible for
+        establishing connection to
+        KUKSA Databroker.
+        + connectToDatabroker()
+    }
+
+    class MockService {
+        Mock service implementation which
+        is responsible to load, manage and
+        tick all mocked data points.
+        + loadMockedDatapoints()
+        + tick()
+    }
+
+    class Behavior {
+        A single behavior which consists of a
+        single condition and multiple actions
+        + execute()
+    }
+
+    class Action {
+        An executable action once a
+        condition evaluates to true.
+        + execute()
+    }
+
+    class Condition {
+        Base class for conditions.
+        + evaluate(): bool
+    }
+
+    class Animator {
+      Base class for animating one action
+      + tick()
+    }
+
+    class BehaviorManager {
+        Manages all loaded behaviors.
+        + tick()
+    }
+
+    BaseService <|-- MockService
+    MockService *-- BehaviorManager
+    BehaviorManager "1" *-- "1..n" Behavior
+    Behavior *-- Condition
+    Behavior *-- "1..n" Action
+    Action *-- Animator
+
